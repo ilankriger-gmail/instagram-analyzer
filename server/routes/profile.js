@@ -3,8 +3,12 @@
 const express = require('express');
 const { spawn } = require('child_process');
 const path = require('path');
+const db = require('../services/database');
 
 const router = express.Router();
+
+// Perfil fixo
+const FIXED_USERNAME = 'nextleveldj1';
 
 /**
  * Executa script Python e retorna resultado
@@ -48,74 +52,86 @@ function runPythonScript(args) {
 }
 
 /**
- * GET /api/profile/:username
- * Busca videos de um perfil do Instagram
- *
- * Query params:
- *   - type: 'posts' | 'reels' | 'all' (default: 'all')
- *   - limit: number (default: 100)
+ * GET /api/videos
+ * Busca videos do banco de dados
  */
-router.get('/profile/:username', async (req, res) => {
+router.get('/videos', async (req, res) => {
   try {
-    const { username } = req.params;
-    const { type = 'all', limit = '100' } = req.query;
+    console.log('[Videos] Buscando videos do banco...');
 
-    console.log(`[Profile] Buscando perfil: @${username} (type: ${type}, limit: ${limit})`);
+    const videos = await db.getVideos();
+    const lastUpdate = await db.getLastUpdate();
 
-    const result = await runPythonScript([username, type, limit]);
+    console.log(`[Videos] Encontrados ${videos.length} videos no banco`);
 
-    if (result.error) {
-      console.log(`[Profile] Erro: ${result.error}`);
-      return res.status(400).json(result);
-    }
-
-    console.log(`[Profile] Encontrados ${result.videos?.length || 0} videos`);
-    res.json(result);
+    res.json({
+      username: FIXED_USERNAME,
+      videos,
+      lastUpdate,
+      fromCache: true
+    });
 
   } catch (error) {
-    console.error('[Profile] Erro:', error);
+    console.error('[Videos] Erro:', error);
     res.status(500).json({
-      error: 'Erro ao buscar perfil',
+      error: 'Erro ao buscar videos',
       details: error.message,
     });
   }
 });
 
 /**
- * GET /api/media/:shortcode
- * Busca informacoes de um video especifico
+ * POST /api/refresh
+ * Atualiza videos do Instagram e salva no banco
  */
-router.get('/media/:shortcode', async (req, res) => {
+router.post('/refresh', async (req, res) => {
   try {
-    const { shortcode } = req.params;
+    console.log(`[Refresh] Atualizando videos de @${FIXED_USERNAME}...`);
 
-    console.log(`[Media] Buscando video: ${shortcode}`);
-
-    const result = await runPythonScript([shortcode]);
+    const result = await runPythonScript([FIXED_USERNAME, 'all', '100']);
 
     if (result.error) {
-      console.log(`[Media] Erro: ${result.error}`);
+      console.log(`[Refresh] Erro: ${result.error}`);
       return res.status(400).json(result);
     }
 
-    console.log(`[Media] Video encontrado: ${result.caption || 'Sem titulo'}`);
-    res.json(result);
+    // Salva no banco
+    console.log(`[Refresh] Salvando ${result.videos?.length || 0} videos no banco...`);
+    await db.saveVideos(result.videos || []);
+
+    // Busca dados atualizados
+    const videos = await db.getVideos();
+    const lastUpdate = await db.getLastUpdate();
+
+    console.log(`[Refresh] Concluido! ${videos.length} videos salvos.`);
+
+    res.json({
+      username: FIXED_USERNAME,
+      videos,
+      lastUpdate,
+      fromCache: false
+    });
 
   } catch (error) {
-    console.error('[Media] Erro:', error);
+    console.error('[Refresh] Erro:', error);
     res.status(500).json({
-      error: 'Erro ao buscar video',
+      error: 'Erro ao atualizar videos',
       details: error.message,
     });
   }
+});
+
+/**
+ * GET /api/profile/:username (mantido para compatibilidade)
+ */
+router.get('/profile/:username', async (req, res) => {
+  // Redireciona para endpoint fixo
+  res.redirect('/api/videos');
 });
 
 /**
  * POST /api/validate-urls
  * Valida uma lista de URLs do Instagram
- *
- * Body:
- *   - urls: string[] (lista de URLs)
  */
 router.post('/validate-urls', async (req, res) => {
   try {
@@ -127,9 +143,7 @@ router.post('/validate-urls', async (req, res) => {
 
     console.log(`[Validate] Validando ${urls.length} URLs`);
 
-    // Regex para extrair shortcode de URLs do Instagram
     const instagramRegex = /instagram\.com\/(?:p|reel|tv)\/([A-Za-z0-9_-]+)/;
-
     const results = [];
 
     for (const url of urls) {
@@ -173,7 +187,6 @@ router.post('/validate-urls', async (req, res) => {
         });
       }
 
-      // Delay entre requests para evitar rate limiting
       await new Promise(resolve => setTimeout(resolve, 500));
     }
 

@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Instagram Analyzer</title>
+  <title>Instagram Analyzer - @nextleveldj1</title>
   <link rel="stylesheet" href="css/styles.css">
 </head>
 <body>
@@ -16,123 +16,91 @@
       </a>
       <div class="logo">
         <span class="logo-icon">📸</span>
-        <span class="logo-text">Instagram Analyzer</span>
+        <span class="logo-text">@nextleveldj1</span>
       </div>
+      <button class="btn btn-refresh" id="btn-refresh">
+        <span>🔄</span>
+        <span>Atualizar</span>
+      </button>
     </header>
 
-    <!-- Main Content -->
-    <main class="main">
-      <!-- Tabs -->
-      <div class="tabs">
-        <button class="tab active" data-tab="urls">URLs Diretas</button>
-        <button class="tab" data-tab="profile">Busca no Perfil</button>
-      </div>
+    <!-- Info -->
+    <div class="info-bar" id="info-bar">
+      <span id="video-count">0 videos</span>
+      <span id="last-update">Nunca atualizado</span>
+    </div>
 
-      <!-- Tab: URLs Diretas -->
-      <div class="tab-content active" id="tab-urls">
-        <div class="input-section">
-          <label for="urls-input">Cole os links do Instagram (um por linha):</label>
-          <textarea id="urls-input" placeholder="https://www.instagram.com/reel/ABC123/
-https://www.instagram.com/p/XYZ789/
-..."></textarea>
-          <button class="btn btn-primary" id="btn-fetch-urls">
-            <span class="btn-icon">🔍</span>
-            Buscar Videos
-          </button>
-        </div>
-      </div>
-
-      <!-- Tab: Busca no Perfil -->
-      <div class="tab-content" id="tab-profile">
-        <div class="input-section">
-          <div class="profile-search">
-            <div class="input-group">
-              <span class="input-prefix">@</span>
-              <input type="text" id="username-input" placeholder="omocodoTeAmo" value="omocodoTeAmo">
-            </div>
-            <select id="media-type">
-              <option value="all">Todos</option>
-              <option value="reels">Reels</option>
-              <option value="posts">Posts</option>
-            </select>
-            <button class="btn btn-primary" id="btn-fetch-profile">
-              <span class="btn-icon">🔍</span>
-              Buscar
-            </button>
+    <!-- Filtros -->
+    <div class="filters-section" id="filters-section">
+      <div class="filters-grid">
+        <div class="filter-group">
+          <label>Views</label>
+          <div class="filter-range">
+            <input type="number" id="filter-views-min" placeholder="Min">
+            <span>-</span>
+            <input type="number" id="filter-views-max" placeholder="Max">
           </div>
         </div>
-
-        <!-- Filtros -->
-        <div class="filters-section" id="filters-section" style="display: none;">
-          <h3>Filtros</h3>
-          <div class="filters-grid">
-            <div class="filter-group">
-              <label>Views</label>
-              <div class="filter-range">
-                <input type="number" id="filter-views-min" placeholder="Min">
-                <span>-</span>
-                <input type="number" id="filter-views-max" placeholder="Max">
-              </div>
-            </div>
-            <div class="filter-group">
-              <label>Duracao (seg)</label>
-              <div class="filter-range">
-                <input type="number" id="filter-duration-min" placeholder="Min">
-                <span>-</span>
-                <input type="number" id="filter-duration-max" placeholder="Max">
-              </div>
-            </div>
-            <div class="filter-group">
-              <label>Ordenar por</label>
-              <select id="filter-sort">
-                <option value="most_views">Mais views</option>
-                <option value="least_views">Menos views</option>
-                <option value="newest">Mais recente</option>
-                <option value="oldest">Mais antigo</option>
-                <option value="longest">Mais longo</option>
-                <option value="shortest">Mais curto</option>
-              </select>
-            </div>
-          </div>
-          <button class="btn btn-secondary" id="btn-apply-filters">Aplicar Filtros</button>
-        </div>
-      </div>
-
-      <!-- Selecao -->
-      <div class="selection-section" id="selection-section" style="display: none;">
-        <div class="selection-header">
-          <span class="selection-count"><span id="selected-count">0</span> de 10 selecionados</span>
-          <div class="selection-buttons">
-            <button class="btn btn-small" id="btn-top5">TOP 5</button>
-            <button class="btn btn-small" id="btn-bottom5">BOTTOM 5</button>
-            <button class="btn btn-small" id="btn-select-all">Todos</button>
-            <button class="btn btn-small" id="btn-clear">Limpar</button>
+        <div class="filter-group">
+          <label>Duracao (seg)</label>
+          <div class="filter-range">
+            <input type="number" id="filter-duration-min" placeholder="Min">
+            <span>-</span>
+            <input type="number" id="filter-duration-max" placeholder="Max">
           </div>
         </div>
-      </div>
-
-      <!-- Grid de Videos -->
-      <div class="videos-grid" id="videos-grid">
-        <!-- Videos serao renderizados aqui -->
-      </div>
-
-      <!-- Barra de Download -->
-      <div class="download-bar" id="download-bar" style="display: none;">
-        <div class="download-options">
-          <select id="quality-select">
-            <option value="best">Melhor qualidade</option>
-            <option value="1080">1080p</option>
-            <option value="720">720p</option>
-            <option value="480">480p</option>
-            <option value="audio">Apenas audio (MP3)</option>
+        <div class="filter-group">
+          <label>Ordenar por</label>
+          <select id="filter-sort">
+            <option value="most_views">Mais views</option>
+            <option value="least_views">Menos views</option>
+            <option value="newest">Mais recente</option>
+            <option value="oldest">Mais antigo</option>
+            <option value="longest">Mais longo</option>
+            <option value="shortest">Mais curto</option>
           </select>
         </div>
-        <button class="btn btn-primary btn-download" id="btn-download">
-          <span class="btn-icon">⬇️</span>
-          Baixar <span id="download-count">0</span> videos
-        </button>
       </div>
-    </main>
+      <button class="btn btn-secondary" id="btn-apply-filters">Aplicar Filtros</button>
+    </div>
+
+    <!-- Selecao -->
+    <div class="selection-section" id="selection-section">
+      <div class="selection-header">
+        <span class="selection-count"><span id="selected-count">0</span> de 10 selecionados</span>
+        <div class="selection-buttons">
+          <button class="btn btn-small" id="btn-top5">TOP 5</button>
+          <button class="btn btn-small" id="btn-bottom5">BOTTOM 5</button>
+          <button class="btn btn-small" id="btn-select-all">Todos</button>
+          <button class="btn btn-small" id="btn-clear">Limpar</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Grid de Videos -->
+    <div class="videos-grid" id="videos-grid">
+      <div class="empty-state">
+        <div class="empty-state-icon">📹</div>
+        <div class="empty-state-text">Carregando videos...</div>
+      </div>
+    </div>
+
+    <!-- Barra de Download -->
+    <div class="download-bar" id="download-bar" style="display: none;">
+      <div class="download-options">
+        <select id="quality-select">
+          <option value="best">Melhor qualidade</option>
+          <option value="1080">1080p</option>
+          <option value="720">720p</option>
+          <option value="480">480p</option>
+          <option value="audio">Apenas audio (MP3)</option>
+        </select>
+      </div>
+      <button class="btn btn-primary btn-download" id="btn-download">
+        <span class="btn-icon">⬇️</span>
+        Baixar <span id="download-count">0</span> videos
+      </button>
+    </div>
 
     <!-- Modal de Download -->
     <div class="modal" id="download-modal">
@@ -148,9 +116,7 @@ https://www.instagram.com/p/XYZ789/
             </div>
             <span class="progress-text" id="progress-text">0%</span>
           </div>
-          <div class="download-list" id="download-list">
-            <!-- Items de download serao renderizados aqui -->
-          </div>
+          <div class="download-list" id="download-list"></div>
         </div>
         <div class="modal-footer">
           <button class="btn btn-secondary" id="btn-cancel-all">Cancelar Todos</button>
@@ -161,7 +127,7 @@ https://www.instagram.com/p/XYZ789/
     <!-- Loading -->
     <div class="loading" id="loading" style="display: none;">
       <div class="spinner"></div>
-      <span>Carregando...</span>
+      <span id="loading-text">Carregando...</span>
     </div>
   </div>
 

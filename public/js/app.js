@@ -1,37 +1,25 @@
 // ========== INSTAGRAM ANALYZER - MAIN APP ==========
 
 const App = {
-  // Estado
   videos: [],
   filteredVideos: [],
-  currentTab: 'urls',
-  profileData: null,
+  lastUpdate: null,
 
   /**
    * Inicializa aplicacao
    */
-  init() {
+  async init() {
     this.bindEvents();
-    this.updateUI();
+    await this.loadVideos();
   },
 
   /**
    * Vincula eventos
    */
   bindEvents() {
-    // Tabs
-    document.querySelectorAll('.tab').forEach(tab => {
-      tab.addEventListener('click', () => this.switchTab(tab.dataset.tab));
-    });
-
-    // Buscar URLs
-    document.getElementById('btn-fetch-urls').addEventListener('click', () => {
-      this.fetchFromUrls();
-    });
-
-    // Buscar Perfil
-    document.getElementById('btn-fetch-profile').addEventListener('click', () => {
-      this.fetchFromProfile();
+    // Refresh
+    document.getElementById('btn-refresh').addEventListener('click', () => {
+      this.refreshFromInstagram();
     });
 
     // Filtros
@@ -77,117 +65,57 @@ const App = {
     document.getElementById('btn-cancel-all').addEventListener('click', () => {
       Download.cancelAll();
     });
-
-    // Enter no input de username
-    document.getElementById('username-input').addEventListener('keypress', (e) => {
-      if (e.key === 'Enter') {
-        this.fetchFromProfile();
-      }
-    });
   },
 
   /**
-   * Troca de tab
+   * Carrega videos do banco de dados
    */
-  switchTab(tab) {
-    this.currentTab = tab;
-
-    // Atualiza tabs
-    document.querySelectorAll('.tab').forEach(t => {
-      t.classList.toggle('active', t.dataset.tab === tab);
-    });
-
-    // Atualiza conteudo
-    document.querySelectorAll('.tab-content').forEach(content => {
-      content.classList.toggle('active', content.id === `tab-${tab}`);
-    });
-  },
-
-  /**
-   * Busca videos a partir de URLs
-   */
-  async fetchFromUrls() {
-    const textarea = document.getElementById('urls-input');
-    const urls = textarea.value
-      .split('\n')
-      .map(u => u.trim())
-      .filter(u => u.length > 0);
-
-    if (urls.length === 0) {
-      alert('Cole pelo menos uma URL do Instagram');
-      return;
-    }
-
-    this.showLoading();
+  async loadVideos() {
+    this.showLoading('Carregando videos...');
 
     try {
-      const result = await validateUrls(urls);
+      const result = await fetchVideos();
 
-      const validVideos = result.results
-        .filter(r => r.valid)
-        .map(r => r.video);
+      this.videos = result.videos || [];
+      this.lastUpdate = result.lastUpdate;
 
-      if (validVideos.length === 0) {
-        alert('Nenhuma URL valida encontrada');
-        this.hideLoading();
-        return;
-      }
-
-      this.videos = validVideos;
-      this.filteredVideos = validVideos;
-
-      // Esconde filtros no modo URLs
-      document.getElementById('filters-section').style.display = 'none';
+      Filters.reset();
+      this.filteredVideos = Filters.apply(this.videos);
 
       this.renderVideos();
       this.updateUI();
 
     } catch (error) {
-      console.error('Erro ao buscar URLs:', error);
-      alert(`Erro: ${error.message}`);
+      console.error('Erro ao carregar videos:', error);
+      this.showEmptyState('Erro ao carregar. Clique em Atualizar.');
     }
 
     this.hideLoading();
   },
 
   /**
-   * Busca videos de um perfil
+   * Atualiza videos do Instagram
    */
-  async fetchFromProfile() {
-    const username = document.getElementById('username-input').value.trim();
-    const type = document.getElementById('media-type').value;
-
-    if (!username) {
-      alert('Digite um nome de usuario');
-      return;
-    }
-
-    this.showLoading();
+  async refreshFromInstagram() {
+    this.showLoading('Buscando videos do Instagram...');
 
     try {
-      const result = await fetchProfile(username, type);
+      const result = await refreshVideos();
 
-      if (result.error) {
-        alert(`Erro: ${result.error}`);
-        this.hideLoading();
-        return;
-      }
-
-      this.profileData = result;
       this.videos = result.videos || [];
+      this.lastUpdate = result.lastUpdate;
 
-      // Aplica filtros padrao (ordenado por mais views)
       Filters.reset();
       this.filteredVideos = Filters.apply(this.videos);
-
-      // Mostra filtros
-      document.getElementById('filters-section').style.display = 'block';
+      Selection.clear();
 
       this.renderVideos();
       this.updateUI();
 
+      alert(`Atualizado! ${this.videos.length} videos encontrados.`);
+
     } catch (error) {
-      console.error('Erro ao buscar perfil:', error);
+      console.error('Erro ao atualizar:', error);
       alert(`Erro: ${error.message}`);
     }
 
@@ -221,7 +149,6 @@ const App = {
       return;
     }
 
-    // Calcula ranking para badges
     const sortedByViews = [...this.filteredVideos].sort((a, b) => b.views - a.views);
     const top5 = new Set(sortedByViews.slice(0, 5).map(v => v.shortcode));
     const bottom5 = new Set(sortedByViews.slice(-5).map(v => v.shortcode));
@@ -242,7 +169,7 @@ const App = {
             alt="${video.caption}"
             loading="lazy"
           >
-          <div class="video-type">${video.type}</div>
+          <div class="video-type">${video.type || 'video'}</div>
           <div class="video-duration">${formatDuration(video.duration)}</div>
           <div class="video-info">
             <div class="video-caption">${video.caption || 'Sem titulo'}</div>
@@ -255,7 +182,6 @@ const App = {
       `;
     }).join('');
 
-    // Bind click events
     grid.querySelectorAll('.video-card').forEach(card => {
       card.addEventListener('click', () => {
         const shortcode = card.dataset.shortcode;
@@ -285,12 +211,14 @@ const App = {
    * Atualiza UI geral
    */
   updateUI() {
+    // Info bar
+    document.getElementById('video-count').textContent = `${this.filteredVideos.length} videos`;
+    document.getElementById('last-update').textContent = this.lastUpdate
+      ? `Atualizado: ${formatDate(this.lastUpdate)}`
+      : 'Nunca atualizado';
+
+    // Download bar
     const hasVideos = this.filteredVideos.length > 0;
-
-    // Selecao
-    document.getElementById('selection-section').style.display = hasVideos ? 'block' : 'none';
-
-    // Barra de download
     document.getElementById('download-bar').style.display = hasVideos ? 'flex' : 'none';
 
     this.updateSelectionUI();
@@ -312,7 +240,8 @@ const App = {
   /**
    * Mostra loading
    */
-  showLoading() {
+  showLoading(text = 'Carregando...') {
+    document.getElementById('loading-text').textContent = text;
     document.getElementById('loading').style.display = 'flex';
   },
 
@@ -322,6 +251,18 @@ const App = {
   hideLoading() {
     document.getElementById('loading').style.display = 'none';
   },
+
+  /**
+   * Mostra estado vazio
+   */
+  showEmptyState(message) {
+    document.getElementById('videos-grid').innerHTML = `
+      <div class="empty-state">
+        <div class="empty-state-icon">📹</div>
+        <div class="empty-state-text">${message}</div>
+      </div>
+    `;
+  }
 };
 
 // Inicializa quando DOM estiver pronto

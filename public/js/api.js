@@ -3,50 +3,30 @@
 const API_BASE = '/api';
 
 /**
- * Busca perfil do Instagram
+ * Busca videos do banco de dados
  */
-async function fetchProfile(username, type = 'all', limit = 100) {
-  const response = await fetch(
-    `${API_BASE}/profile/${encodeURIComponent(username)}?type=${type}&limit=${limit}`
-  );
+async function fetchVideos() {
+  const response = await fetch(`${API_BASE}/videos`);
 
   if (!response.ok) {
     const error = await response.json();
-    throw new Error(error.error || 'Erro ao buscar perfil');
+    throw new Error(error.error || 'Erro ao buscar videos');
   }
 
   return response.json();
 }
 
 /**
- * Busca informacoes de um video
+ * Atualiza videos do Instagram
  */
-async function fetchMedia(shortcode) {
-  const response = await fetch(`${API_BASE}/media/${encodeURIComponent(shortcode)}`);
-
-  if (!response.ok) {
-    const error = await response.json();
-    throw new Error(error.error || 'Erro ao buscar video');
-  }
-
-  return response.json();
-}
-
-/**
- * Valida lista de URLs do Instagram
- */
-async function validateUrls(urls) {
-  const response = await fetch(`${API_BASE}/validate-urls`, {
+async function refreshVideos() {
+  const response = await fetch(`${API_BASE}/refresh`, {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({ urls }),
   });
 
   if (!response.ok) {
     const error = await response.json();
-    throw new Error(error.error || 'Erro ao validar URLs');
+    throw new Error(error.error || 'Erro ao atualizar videos');
   }
 
   return response.json();
@@ -66,14 +46,6 @@ function getDownloadUrl(videoUrl, quality = 'best', filename = '') {
   }
 
   return `${API_BASE}/download?${params.toString()}`;
-}
-
-/**
- * Extrai shortcode de URL do Instagram
- */
-function extractShortcode(url) {
-  const match = url.match(/instagram\.com\/(?:p|reel|tv)\/([A-Za-z0-9_-]+)/);
-  return match ? match[1] : null;
 }
 
 /**
@@ -100,13 +72,27 @@ function formatDuration(seconds) {
 }
 
 /**
+ * Formata data para exibicao
+ */
+function formatDate(dateStr) {
+  if (!dateStr) return 'N/A';
+  const date = new Date(dateStr);
+  return date.toLocaleDateString('pt-BR', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit'
+  });
+}
+
+/**
  * Gera nome de arquivo para download
  */
 function generateFilename(video) {
   const viewsFormatted = formatNumber(video.views);
   let title = video.caption || 'video';
 
-  // Limpa titulo
   title = title
     .replace(/[^\w\s-]/g, '')
     .replace(/\s+/g, ' ')
