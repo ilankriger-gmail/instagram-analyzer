@@ -74,10 +74,9 @@ app.listen(PORT, () => {
   console.log('');
   console.log('Endpoints disponiveis:');
   console.log('  GET  /health                    - Health check');
-  console.log('  GET  /api/profile/:username     - Buscar perfil');
-  console.log('  GET  /api/media/:shortcode      - Info de um video');
+  console.log('  GET  /api/videos                - Buscar videos do banco');
+  console.log('  POST /api/refresh               - Atualizar do Instagram');
   console.log('  GET  /api/download              - Download de video');
-  console.log('  POST /api/validate-urls         - Validar URLs');
   console.log('========================================');
   console.log('');
 });
