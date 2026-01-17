@@ -53,12 +53,12 @@ router.get('/download', async (req, res) => {
 
   // Monta argumentos do yt-dlp
   const args = [
-    '--cookies-from-browser', 'chrome',
     '-f', getFormatString(quality),
     '--merge-output-format', isAudio ? 'mp3' : 'mp4',
     '-o', outputFile,
     '--no-playlist',
     '--no-warnings',
+    '--user-agent', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
     url,
   ];
 
@@ -121,7 +121,9 @@ router.get('/download', async (req, res) => {
 
     stream.on('error', (err) => {
       console.error('[Download] Erro no stream:', err);
-      res.status(500).end();
+      if (!res.headersSent) {
+        res.status(500).end();
+      }
       fs.unlink(outputFile, () => {});
     });
 
@@ -130,10 +132,12 @@ router.get('/download', async (req, res) => {
 
   ytdlp.on('error', (err) => {
     console.error('[Download] Erro ao executar yt-dlp:', err);
-    res.status(500).json({
-      error: 'Erro ao executar yt-dlp',
-      details: err.message,
-    });
+    if (!res.headersSent) {
+      res.status(500).json({
+        error: 'Erro ao executar yt-dlp',
+        details: err.message,
+      });
+    }
   });
 });
 
@@ -149,9 +153,9 @@ router.get('/download/info', async (req, res) => {
   }
 
   const ytdlp = spawn('yt-dlp', [
-    '--cookies-from-browser', 'chrome',
     '-J',
     '--no-warnings',
+    '--user-agent', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
     url,
   ]);
 
