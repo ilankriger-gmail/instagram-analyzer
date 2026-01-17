@@ -1,0 +1,16 @@
+{
+  "name": "instagram-analyzer",
+  "version": "1.0.0",
+  "description": "Ferramenta para buscar, filtrar e baixar videos do Instagram",
+  "main": "server/index.js",
+  "scripts": {
+    "start": "node server/index.js",
+    "dev": "node server/index.js"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^4.18.2"
+  }
+}
