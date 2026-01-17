@@ -34,6 +34,16 @@
     <div class="filters-section" id="filters-section">
       <div class="filters-grid">
         <div class="filter-group">
+          <label>Periodo</label>
+          <select id="filter-period">
+            <option value="all">Todo tempo</option>
+            <option value="30">Ultimos 30 dias</option>
+            <option value="60">Ultimos 60 dias</option>
+            <option value="90">Ultimos 90 dias</option>
+            <option value="365">Ultimo ano</option>
+          </select>
+        </div>
+        <div class="filter-group">
           <label>Views</label>
           <div class="filter-range">
             <input type="number" id="filter-views-min" placeholder="Min">

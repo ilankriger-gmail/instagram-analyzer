@@ -1,12 +1,16 @@
 # Instagram Analyzer - Dockerfile para Railway
 FROM node:20-slim
 
-# Instalar Python e dependencias
+# Instalar Python, ffmpeg e dependencias
 RUN apt-get update && apt-get install -y \
     python3 \
     python3-pip \
     python3-venv \
+    ffmpeg \
     && rm -rf /var/lib/apt/lists/*
+
+# Instalar yt-dlp globalmente
+RUN pip3 install --break-system-packages yt-dlp
 
 # Criar diretorio da app
 WORKDIR /app
